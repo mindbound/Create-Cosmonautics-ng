@@ -150,7 +150,8 @@ public class FluidHoseItem extends Item {
                     level.setBlock(point.anchorPos, state, 3);
                 }
 
-                if (attachHose(level, firstPoint.anchorPos, point.anchorPos)) {
+                // like Simulated's rope item: a rope this replaces drops its item, except for players with infinite materials
+                if (attachHose(level, firstPoint.anchorPos, point.anchorPos, player == null || !player.hasInfiniteMaterials())) {
                     if (player != null) {
                         player.displayClientMessage(Component.literal("Hose connected successfully!"), true);
                     }
@@ -169,7 +170,7 @@ public class FluidHoseItem extends Item {
         }
     }
 
-    private boolean attachHose(Level level, BlockPos posA, BlockPos posB) {
+    private boolean attachHose(Level level, BlockPos posA, BlockPos posB, boolean dropReplacedRope) {
         BlockEntity beA = level.getBlockEntity(posA);
         BlockEntity beB = level.getBlockEntity(posB);
 
@@ -178,7 +179,7 @@ public class FluidHoseItem extends Item {
             RopeStrandHolderBehavior holderB = sbeB.getBehaviour(RopeStrandHolderBehavior.TYPE);
 
             if (holderA != null && holderB != null) {
-                if (holderA.createRope(holderB)) {
+                if (holderA.createRope(holderB, dropReplacedRope)) {
                     level.playSound(null, posA, SoundEvents.WOOL_PLACE, SoundSource.BLOCKS, 0.5F, 1F);
                     level.playSound(null, posB, SoundEvents.WOOL_PLACE, SoundSource.BLOCKS, 0.5F, 1F);
                     return true;

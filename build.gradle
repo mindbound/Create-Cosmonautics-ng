@@ -92,7 +92,7 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 neoForge {
-    version = '21.1.249'
+    version = '21.1.265'
 
     runs {
         client {
@@ -167,7 +167,7 @@ dependencies {
     implementation("dev.ryanhcode.offroad:offroad-neoforge-${minecraft_version}:${offroad_version}") { transitive = false }
     implementation("dev.simulated_team.simulated:simulated-neoforge-${minecraft_version}:${simulated_version}") { transitive = false }
     implementation("dev.eriksonn.aeronautics:aeronautics-neoforge-${minecraft_version}:${aeronautics_version}") { transitive = false }
-    implementation("foundry.veil:veil-neoforge-${minecraft_version}:4.1.1")
+    implementation("foundry.veil:veil-neoforge-${minecraft_version}:${veil_version}")
 
     runtimeOnly("maven.modrinth:c2me-neoforge:${c2me_version}+1.21.1")
     jarExtraction("maven.modrinth:c2me-neoforge:${c2me_version}+1.21.1")
