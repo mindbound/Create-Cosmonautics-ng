@@ -8,6 +8,7 @@
     "BacktankUtilMixin",
     "BucketItemAccessor",
     "CarvingContextMixin",
+    "DimensionalSableCommandMixin",
     "DistanceManagerAccessor",
     "DivingHelmetItemMixin",
     "EntityMixin",

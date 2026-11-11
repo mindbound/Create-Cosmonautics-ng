@@ -155,6 +155,15 @@ dependencies {
     }
     implementation("dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}")
 
+    // Dimensional Sable is its own mod. Bundling the published jar (instead of a copy of its source)
+    // lets NeoForge keep a single copy when other mods, such as Create: Riftborne, bundle it too.
+    jarJar(implementation("maven.modrinth:dimensional-sable")) {
+        version {
+            strictly '[1.1.0,1.2.0)'
+            prefer '1.1.0'
+        }
+    }
+
     implementation("dev.ryanhcode.offroad:offroad-neoforge-${minecraft_version}:${offroad_version}") { transitive = false }
     implementation("dev.simulated_team.simulated:simulated-neoforge-${minecraft_version}:${simulated_version}") { transitive = false }
     implementation("dev.eriksonn.aeronautics:aeronautics-neoforge-${minecraft_version}:${aeronautics_version}") { transitive = false }
@@ -220,6 +229,8 @@ tasks.named('createMinecraftArtifacts') {
 shadowJar {
     archiveClassifier.set('')
     configurations = [project.configurations.shade]
+    // The shadow jar replaces the plain jar, so it has to carry the jar-in-jar files (META-INF/jarjar) itself.
+    from(tasks.named('jarJar'))
     relocate 'org.luaj', 'dev.devce.rocketnautics.shaded.luaj'
     relocate 'org.orekit', 'dev.devce.rocketnautics.shaded.orekit'
     relocate 'org.hipparchus', 'dev.devce.rocketnautics.shaded.hipparchus'

@@ -5,8 +5,6 @@ logoFile="icon.png"
 
 [[mixins]]
 config="rocketnautics.mixins.json"
-[[mixins]]
-config="dimensional_sable.mixins.json"
 
 [[mods]]
 modId="rocketnautics"
@@ -17,12 +15,6 @@ authors="webyep-art, M_W_K"
 description='''
 Space addon for Create Aeronautics!
 '''
-
-[[mods]]
-modId="dimensional_sable"
-version="1.0.5"
-displayName="Dimensional Sable"
-description='''Dimensional Support for Sable'''
 
 [[dependencies.rocketnautics]]
 modId="minecraft"
@@ -55,21 +47,7 @@ side="BOTH"
 [[dependencies.rocketnautics]]
 modId="dimensional_sable"
 type="required"
-versionRange="[1.0,)"
-ordering="NONE"
-side="BOTH"
-
-[[dependencies.dimensional_sable]]
-modId="neoforge"
-type="required"
-versionRange="[21.1.1,)"
-ordering="NONE"
-side="BOTH"
-
-[[dependencies.dimensional_sable]]
-modId="sable"
-type="required"
-versionRange="[2.0.3,)"
+versionRange="[1.1.0,1.2.0)"
 ordering="NONE"
 side="BOTH"
 
