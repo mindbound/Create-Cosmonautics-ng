@@ -11,6 +11,7 @@ import dev.devce.rocketnautics.RocketNautics;
 import dev.devce.rocketnautics.registry.RocketBlocks;
 import dev.devce.rocketnautics.registry.RocketItems;
 import dev.devce.rocketnautics.registry.RocketTags;
+import dev.simulated_team.simulated.index.SimItems;
 import net.createmod.catnip.registry.RegisteredObjectsHelper;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.core.HolderLookup;
@@ -177,6 +178,10 @@ public final class RocketStandardRecipeGen extends BaseRecipeProvider {
             .define('I', CommonMetal.IRON.plates)
             .define('C', RocketBlocks.TITANIUM_CASING)
             .define('P', AllBlocks.FLUID_PIPE));
+
+    GeneratedRecipe FLUID_HOSE = create(RocketItems.FLUID_HOSE).unlockedBy(RocketBlocks.HOSE_ANCHOR).viaShapeless(b -> b
+            .requires(SimItems.ROPE_COUPLING)
+            .requires(AllBlocks.FLUID_PIPE));
 
     GeneratedRecipe DRAIN_VALVE = create(RocketBlocks.DRAIN_VALVE).unlockedBy(AllBlocks.FLUID_PIPE).viaShaped(b -> b
             .pattern(" N ")

@@ -55,7 +55,8 @@ public class HoseAnchorBlock extends Block implements IBE<HoseAnchorBlockEntity>
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getNearestLookingDirection().getOpposite());
+        // attach to the block whose face was clicked, whatever angle the player is looking from (as the Fluid Hose does)
+        return defaultBlockState().setValue(FACING, context.getClickedFace());
     }
 
     @Override

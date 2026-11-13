@@ -137,41 +137,27 @@ public class HoseAnchorBlockEntity extends SmartBlockEntity implements RopeStran
         return null;
     }
 
+    /**
+     * Moves fluid from the fuller anchor towards the emptier one: half the difference, at most {@link #TRANSFER_RATE}.
+     * Moving a flat amount would overshoot small differences, so the anchors would swap Input/Output roles every tick.
+     */
     private static void equalizeFluid(HoseAnchorBlockEntity a, HoseAnchorBlockEntity b) {
-        int aAmt = a.fuelTank.getFluidAmount();
-        int bAmt = b.fuelTank.getFluidAmount();
-
-        if (aAmt == bAmt) return;
-
-        if (aAmt > bAmt) {
-            FluidStack available = a.fuelTank.drain(TRANSFER_RATE, IFluidHandler.FluidAction.SIMULATE);
-            if (!available.isEmpty()) {
-                int accepted = b.fuelTank.fill(available, IFluidHandler.FluidAction.SIMULATE);
-                if (accepted > 0) {
-                    int toMove = Math.min(available.getAmount(), accepted);
-                    FluidStack moving = available.copy();
-                    moving.setAmount(toMove);
-                    a.fuelTank.drain(toMove, IFluidHandler.FluidAction.EXECUTE);
-                    b.fuelTank.fill(moving, IFluidHandler.FluidAction.EXECUTE);
-                    a.setChanged();
-                    b.setChanged();
-                }
-            }
-        } else {
-            FluidStack available = b.fuelTank.drain(TRANSFER_RATE, IFluidHandler.FluidAction.SIMULATE);
-            if (!available.isEmpty()) {
-                int accepted = a.fuelTank.fill(available, IFluidHandler.FluidAction.SIMULATE);
-                if (accepted > 0) {
-                    int toMove = Math.min(available.getAmount(), accepted);
-                    FluidStack moving = available.copy();
-                    moving.setAmount(toMove);
-                    b.fuelTank.drain(toMove, IFluidHandler.FluidAction.EXECUTE);
-                    a.fuelTank.fill(moving, IFluidHandler.FluidAction.EXECUTE);
-                    a.setChanged();
-                    b.setChanged();
-                }
-            }
+        int difference = a.fuelTank.getFluidAmount() - b.fuelTank.getFluidAmount();
+        if (difference > 1) {
+            transferFluid(a, b, Math.min(TRANSFER_RATE, difference / 2));
+        } else if (difference < -1) {
+            transferFluid(b, a, Math.min(TRANSFER_RATE, -difference / 2));
         }
+    }
+
+    private static void transferFluid(HoseAnchorBlockEntity from, HoseAnchorBlockEntity to, int maxAmount) {
+        FluidStack available = from.fuelTank.drain(maxAmount, IFluidHandler.FluidAction.SIMULATE);
+        if (available.isEmpty()) return;
+        int accepted = to.fuelTank.fill(available, IFluidHandler.FluidAction.SIMULATE);
+        if (accepted <= 0) return;
+        to.fuelTank.fill(from.fuelTank.drain(accepted, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        from.setChanged();
+        to.setChanged();
     }
 
     private static void tickAnchorPressure(HoseAnchorBlockEntity anchor, boolean active) {

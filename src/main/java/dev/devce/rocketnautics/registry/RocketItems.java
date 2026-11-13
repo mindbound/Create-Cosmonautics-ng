@@ -7,6 +7,7 @@ import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import dev.devce.rocketnautics.RocketNautics;
 import dev.devce.rocketnautics.content.items.*;
+import dev.devce.rocketnautics.content.items.hose.FluidHoseItem;
 import dev.simulated_team.simulated.registrate.SimulatedRegistrate;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -59,6 +60,9 @@ public class RocketItems {
     public static final ItemEntry<dev.devce.rocketnautics.content.blocks.mfd.cartridge.MFDCartridgeItem> MFD_CARTRIDGE = REGISTRATE
             .item("mfd_cartridge", dev.devce.rocketnautics.content.blocks.mfd.cartridge.MFDCartridgeItem::new)
             .properties(p -> p.stacksTo(1))
+            .register();
+
+    public static final ItemEntry<FluidHoseItem> FLUID_HOSE = REGISTRATE.item("fluid_hose", FluidHoseItem::new)
             .register();
 
     static { REGISTRATE.setCreativeTab(RocketTabs.RESOURCE_TAB); }

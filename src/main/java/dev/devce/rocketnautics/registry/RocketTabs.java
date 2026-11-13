@@ -139,6 +139,7 @@ public class RocketTabs {
             "engine_pipes_expander",
             "expandable_pipe",
             "hose_anchor",
+            "fluid_hose",
             "titanium_casing",
             "raw_titanium",
             "crushed_raw_titanium",
