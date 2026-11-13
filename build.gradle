@@ -137,6 +137,38 @@ tasks.register('extractInnerJar', Copy) {
     into layout.buildDirectory.dir("extracted-jars")
 }
 
+// Dimensional Sable: dimensional_sable_version is the version we bundle and build against;
+// dimensional_sable_range becomes the jar-in-jar range, which keeps NeoForge from choosing another mod's
+// copy that our DS mixins weren't checked against.
+//
+// Gradle resolves DS straight to dimensional_sable_version instead of choosing a version from the range.
+// Choosing needs Modrinth's version list (maven-metadata.xml), and Gradle revalidates a cached copy with an
+// HTTP HEAD request once it is 24 hours old. Modrinth's Maven answers HEAD with 404, so from the second day
+// on builds failed with "no versions of maven.modrinth:dimensional-sable are available". ModDevGradle takes
+// the jar-in-jar range from the declared constraint, not from this rule, so the range stays as declared.
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'maven.modrinth' && details.requested.name == 'dimensional-sable') {
+            details.useVersion(dimensional_sable_version)
+            details.because('Modrinth\'s Maven answers HEAD with 404, so a cached version list cannot be revalidated')
+        }
+    }
+}
+
+// useVersion replaces the range, so Gradle doesn't notice a version outside it; the jar would then bundle a
+// version that its own jar-in-jar range excludes.
+def dsRange = dimensional_sable_range =~ /^\[([\d.]+),([\d.]+)\)$/
+if (!dsRange.matches()) {
+    throw new GradleException("dimensional_sable_range must have the form [low,high), not '${dimensional_sable_range}'")
+}
+def compareVersions = { String a, String b ->
+    def x = a.tokenize('.')*.toInteger(), y = b.tokenize('.')*.toInteger()
+    (0..<Math.max(x.size(), y.size())).collect { (x[it] ?: 0) <=> (y[it] ?: 0) }.find { it != 0 } ?: 0
+}
+if (compareVersions(dimensional_sable_version, dsRange.group(1)) < 0 || compareVersions(dimensional_sable_version, dsRange.group(2)) >= 0) {
+    throw new GradleException("dimensional_sable_version ${dimensional_sable_version} is outside dimensional_sable_range ${dimensional_sable_range}")
+}
+
 dependencies {
 
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
@@ -157,10 +189,11 @@ dependencies {
 
     // Dimensional Sable is its own mod. Bundling the published jar (instead of a copy of its source)
     // lets NeoForge keep a single copy when other mods, such as Create: Riftborne, bundle it too.
+    // Version and range: see the notes above the dependencies block.
     jarJar(implementation("maven.modrinth:dimensional-sable")) {
         version {
-            strictly '[1.1.0,1.2.0)'
-            prefer '1.1.0'
+            strictly dimensional_sable_range
+            prefer dimensional_sable_version
         }
     }
 
