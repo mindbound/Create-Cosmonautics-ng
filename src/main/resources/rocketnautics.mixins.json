@@ -24,6 +24,7 @@
     "RapierPhysicsPipelineMixin",
     "RapierRotaryConstraintHandleMixin",
     "RemainingAirOverlayMixin",
+    "RopeItemMixin",
     "RopeStrandHolderBehaviorMixin",
     "SubLevelHoldingChunkAccessor",
     "SubLevelHoldingChunkMapAccessor",

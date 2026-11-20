@@ -27,8 +27,16 @@ import org.jetbrains.annotations.Nullable;
 
 public class FluidHoseItem extends Item {
 
+    // RopeStrandHolderBehaviorMixin refuses ropes on Hose Anchors unless they are created while this is set
+    private static final ThreadLocal<Boolean> CONNECTING = ThreadLocal.withInitial(() -> false);
+
     public FluidHoseItem(Properties properties) {
         super(properties);
+    }
+
+    /** True while a Fluid Hose is creating a hose; only then may a rope strand be tied to a Hose Anchor. */
+    public static boolean isConnecting() {
+        return CONNECTING.get();
     }
 
     // CustomData.update drops the component once it is empty, so a cleared hose stacks with fresh ones again
@@ -243,7 +251,14 @@ public class FluidHoseItem extends Item {
             RopeStrandHolderBehavior holderB = sbeB.getBehaviour(RopeStrandHolderBehavior.TYPE);
 
             if (holderA != null && holderB != null) {
-                if (holderA.createRope(holderB, dropReplacedRope)) {
+                boolean created;
+                CONNECTING.set(true);
+                try {
+                    created = holderA.createRope(holderB, dropReplacedRope);
+                } finally {
+                    CONNECTING.remove();
+                }
+                if (created) {
                     level.playSound(null, posA, SoundEvents.WOOL_PLACE, SoundSource.BLOCKS, 0.5F, 1F);
                     level.playSound(null, posB, SoundEvents.WOOL_PLACE, SoundSource.BLOCKS, 0.5F, 1F);
                     return true;
