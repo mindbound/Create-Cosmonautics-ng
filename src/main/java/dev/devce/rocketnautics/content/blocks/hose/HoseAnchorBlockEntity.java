@@ -40,8 +40,25 @@ public class HoseAnchorBlockEntity extends SmartBlockEntity implements RopeStran
     private RopeStrandHolderBehavior ropeHolder;
     public final FluidTank fuelTank = new FluidTank(1000, fluid -> true);
 
-    /** Tracks whether we were outputting pressure last tick (for proper reset on idle). */
+    /**
+     * Pipes n Physics replaces Create's pipe transport with its own solver and clears, every tick, any pipe pressure
+     * that a pump it knows didn't write. The pressure an Output anchor pushes into its pipes does nothing there, so it
+     * is skipped: with Pipes n Physics, fluid leaves an Output anchor through its pipes only by a pump or downhill.
+     * Filling a fluid container right behind the anchor works either way.
+     */
+    private static final boolean PIPES_N_PHYSICS = net.neoforged.fml.ModList.get().isLoaded("pipesnphysics");
+    /** Ticks between updates sent to clients while only the amount in the tank changes. */
+    private static final int SYNC_INTERVAL = 10;
+
+    /**
+     * This anchor's role in the last tick: true while it is the Output (the emptier end, passing fluid on), false for
+     * the Input. Also used to reset Create's pipe networks once it stops pushing. Sent to clients for the goggles.
+     */
     private boolean wasOutputting = false;
+    /** What clients were last sent, so the anchor sends again only when its role or the amount in the tank changes. */
+    private boolean sentOutputting;
+    private int sentAmount = -1;
+    private long sentAt;
 
     public HoseAnchorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -66,12 +83,15 @@ public class HoseAnchorBlockEntity extends SmartBlockEntity implements RopeStran
             invalidateRenderBoundingBox();
             return;
         }
+        syncToClients();
 
         ServerRopeStrand strand = ropeHolder.getAttachedStrand();
         if (strand == null) {
             if (wasOutputting) {
-                Direction pipeDir = getBlockState().getValue(HoseAnchorBlock.FACING).getOpposite();
-                FluidPropagator.resetAffectedFluidNetworks(level, worldPosition, pipeDir);
+                if (!PIPES_N_PHYSICS) {
+                    Direction pipeDir = getBlockState().getValue(HoseAnchorBlock.FACING).getOpposite();
+                    FluidPropagator.resetAffectedFluidNetworks(level, worldPosition, pipeDir);
+                }
                 wasOutputting = false;
             }
             return;
@@ -180,15 +200,41 @@ public class HoseAnchorBlockEntity extends SmartBlockEntity implements RopeStran
                         anchor.setChanged();
                     }
                 }
-            } else {
+            } else if (!PIPES_N_PHYSICS) {
                 anchor.distributeOutputPressure();
-                anchor.wasOutputting = true;
             }
+            // The Output role holds whether it fills a container directly or pushes into pipes (it used to be set only
+            // for pipes, so the goggles and the equal-levels tie-break saw a direct filler as the Input).
+            anchor.wasOutputting = true;
         } else if (anchor.wasOutputting) {
-            Direction pipeDir = anchor.getBlockState().getValue(HoseAnchorBlock.FACING).getOpposite();
-            FluidPropagator.resetAffectedFluidNetworks(anchor.level, anchor.worldPosition, pipeDir);
+            if (!PIPES_N_PHYSICS) {
+                Direction pipeDir = anchor.getBlockState().getValue(HoseAnchorBlock.FACING).getOpposite();
+                FluidPropagator.resetAffectedFluidNetworks(anchor.level, anchor.worldPosition, pipeDir);
+            }
             anchor.wasOutputting = false;
         }
+    }
+
+    /**
+     * Sends the role and tank to clients, which the goggles read: when the role changes, and at most every
+     * {@link #SYNC_INTERVAL} ticks while only the amount changes. Nothing sent these before, so clients kept the tank as
+     * it was when the chunk loaded and always showed the Input role.
+     */
+    private void syncToClients() {
+        int amount = fuelTank.getFluidAmount();
+        long now = level.getGameTime();
+        if (wasOutputting == sentOutputting && (amount == sentAmount || now - sentAt < SYNC_INTERVAL)) return;
+        sentOutputting = wasOutputting;
+        sentAmount = amount;
+        sentAt = now;
+        sendData();
+    }
+
+    /** Whether this anchor is attached to a Create pipe (rather than to something it can fill directly). */
+    private boolean attachedToPipe() {
+        Direction facing = getBlockState().getValue(HoseAnchorBlock.FACING);
+        BlockPos behind = worldPosition.relative(facing.getOpposite());
+        return level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing) == null && FluidPropagator.getPipe(level, behind) != null;
     }
 
     private void distributeOutputPressure() {
@@ -423,6 +469,12 @@ public class HoseAnchorBlockEntity extends SmartBlockEntity implements RopeStran
                     .append(wasOutputting 
                             ? net.minecraft.network.chat.Component.translatable("rocketnautics.goggles.hose.role.output").withStyle(net.minecraft.ChatFormatting.GOLD)
                             : net.minecraft.network.chat.Component.translatable("rocketnautics.goggles.hose.role.input").withStyle(net.minecraft.ChatFormatting.BLUE)));
+            if (PIPES_N_PHYSICS && wasOutputting && level != null && attachedToPipe()) {
+                tooltip.add(net.minecraft.network.chat.Component.literal("  ")
+                        .append(net.minecraft.network.chat.Component.translatable("rocketnautics.goggles.hose.pnp").withStyle(net.minecraft.ChatFormatting.GOLD)));
+                tooltip.add(net.minecraft.network.chat.Component.literal("  ")
+                        .append(net.minecraft.network.chat.Component.translatable("rocketnautics.goggles.hose.pnp.why").withStyle(net.minecraft.ChatFormatting.DARK_GRAY)));
+            }
         }
 
         if (!fuelTank.isEmpty()) {
@@ -453,6 +505,7 @@ public class HoseAnchorBlockEntity extends SmartBlockEntity implements RopeStran
         CompoundTag tankTag = new CompoundTag();
         fuelTank.writeToNBT(registries, tankTag);
         tag.put("FluidTank", tankTag);
+        if (clientPacket) tag.putBoolean("Outputting", wasOutputting);
     }
 
     @Override
@@ -461,5 +514,6 @@ public class HoseAnchorBlockEntity extends SmartBlockEntity implements RopeStran
         if (tag.contains("FluidTank")) {
             fuelTank.readFromNBT(registries, tag.getCompound("FluidTank"));
         }
+        if (clientPacket) wasOutputting = tag.getBoolean("Outputting");
     }
 }

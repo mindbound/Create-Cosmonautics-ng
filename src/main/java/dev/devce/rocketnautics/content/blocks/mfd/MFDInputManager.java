@@ -14,7 +14,8 @@ import org.lwjgl.glfw.GLFW;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@EventBusSubscriber
+// Client only: its one listener is client-only, and a dedicated server refuses a subscriber with no listeners left.
+@EventBusSubscriber(value = Dist.CLIENT)
 public class MFDInputManager {
 
     private static final Set<String> ACTIVE_KEYS = ConcurrentHashMap.newKeySet();

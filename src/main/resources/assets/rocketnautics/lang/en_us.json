@@ -295,6 +295,8 @@
   "rocketnautics.goggles.hose.role.output": "Output",
   "rocketnautics.goggles.hose.role.input": "Input",
   "rocketnautics.goggles.hose.contents": "Contents",
+  "rocketnautics.goggles.hose.pnp": "Moves on by a pump or downhill",
+  "rocketnautics.goggles.hose.pnp.why": "(Pipes n Physics: the hose doesn't push)",
   "rocketnautics.fluid_hose.cleared": "Hose cleared",
   "rocketnautics.fluid_hose.first_set": "First end set. Now click the other pipe or anchor.",
   "rocketnautics.fluid_hose.first_invalid": "The first end is no longer valid",
